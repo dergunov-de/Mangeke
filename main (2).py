@@ -3,24 +3,14 @@ import random
 import os
 
 os.environ['SDL_VIDEO_CENTERED'] = '1'
-try:
-    with open('record.txt', 'x') as f:
-        f.write(str(0))
-except BaseException:
-    pass
 
 SIZE = WIDTH, HEIGHT = 800, 600
-GREY = (128, 128, 128)
+GRAY = (128, 128, 128)
 GREEN = (0, 128, 0)
-WHITE = (200, 200, 200)
+WHEIT = (200, 200, 200)
 block = False
-block2 = False
 car_accident = 0
 scr1 = True
-rgb = [0, 250, 0]
-level = 40
-count = [0]
-
 pg.init()
 pg.display.set_caption('Rally')
 screen = pg.display.set_mode(SIZE)
@@ -30,20 +20,14 @@ clock = pg.time.Clock()
 
 cars = [pg.image.load('Image/car1.png'), pg.image.load('Image/car2.png'),
         pg.image.load('Image/car3.png')]
-sound_car_accident = pg.mixer.Sound('sound/udar.wav')
-sound_canister = pg.mixer.Sound('sound/canister.wav')
+sound_car_accident = pg.mixer.Sound('Image/udar.wav')
 font = pg.font.Font(None, 32)
+start_phone = pg.image.load('Image/Sponge_phoneNEW.jpg')
+start_phone_rect = start_phone.get_rect(center=(WIDTH // 2, HEIGHT - 300))
 button_start = pg.image.load('Image/start_button.png')
-button_start_rect = button_start.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 100))
+button_start_rect = button_start.get_rect(center=(140, 300))
 button_stop = pg.image.load('Image/stop_button.png')
-button_stop_rect = button_stop.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 100))
-
-fuel_image = pg.image.load('Image/fuel.png')
-canister_image = pg.image.load('Image/canister.png')
-water_image = pg.image.load('Image/water.png')
-
-u1_event = pg.USEREVENT + 1
-pg.time.set_timer(u1_event, random.randrange(6000, 26001, 4000))
+button_stop_rect = button_stop.get_rect(center=(680, 370))
 
 
 class Player(pg.sprite.Sprite):
@@ -64,7 +48,7 @@ class Player(pg.sprite.Sprite):
         self.image = pg.transform.rotate(self.orig_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
         self.position += self.velocity
-        self.rect.center = int(self.position.x), int(self.position.y)
+        self.rect.center = self.position
 
         keys = pg.key.get_pressed()
         if keys[pg.K_RIGHT]:
@@ -106,34 +90,24 @@ class Car(pg.sprite.Sprite):
     def __init__(self, x, y, img):
         pg.sprite.Sprite.__init__(self)
 
-        if img == fuel_image:
-            self.image = img
-            self.speed = 0
-        elif img == canister_image:
-            self.image = img
-            self.speed = 1
-        else:
-            self.image = pg.transform.flip(img, False, True)
-            self.speed = random.randint(2, 3)
+        self.image = pg.transform.flip(img, False, True)
+        self.speed = random.randint(2, 3)
         self.rect = self.image.get_rect(center=(x, y))
 
     def update(self):
         self.rect.y += self.speed
         if self.rect.top >= HEIGHT:
-            if self == canister:
-                self.kill()
-            else:
-                count[0] += 1
-                list_x.remove(self.rect.centerx)
-                while True:
-                    self.rect.centerx = random.randrange(80, WIDTH, 80)
-                    if self.rect.centerx in list_x:
-                        continue
-                    else:
-                        list_x.append(self.rect.centerx)
-                        self.speed = random.randint(2, 3)
-                        self.rect.bottom = 0
-                        break
+            self.rect.bottom = 0
+
+            list_x.remove(self.rect.centerx)
+            while True:
+                self.rect.centerx = random.randrange(80, WIDTH, 80)
+                if self.rect.centerx in list_x:
+                    continue
+                else:
+                    list_x.append(self.rect.centerx)
+                    self.speed = random.randint(2, 3)
+                    break
 
 
 class Road(pg.sprite.Sprite):
@@ -141,13 +115,13 @@ class Road(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self)
 
         self.image = pg.Surface(screen.get_size())
-        self.image.fill(GREY)
+        self.image.fill(GRAY)
         pg.draw.line(self.image, GREEN, (20, 0), (20, 600), 40)
         pg.draw.line(self.image, GREEN, (780, 0), (780, 600), 40)
         for xx in range(10):
             for yy in range(10):
                 pg.draw.line(
-                    self.image, WHITE,
+                    self.image, WHEIT,
                     (40 + xx * 80, 0 if xx == 0 or xx == 9 else 10 + yy * 60),
                     (40 + xx * 80, 600 if xx == 0 or xx == 9 else 50 + yy * 60), 5)
         self.rect = self.image.get_rect(topleft=(x, y))
@@ -161,8 +135,6 @@ class Road(pg.sprite.Sprite):
 
 all_sprite = pg.sprite.Group()
 cars_group = pg.sprite.Group()
-canister_group = pg.sprite.Group()
-
 for r in range(2):
     all_sprite.add(Road(0, 0 if r == 0 else -HEIGHT))
 player = Player()
@@ -178,15 +150,13 @@ while n < 6:
         cars_group.add(Car(x, -cars[0].get_height(), random.choice(cars)))
         n += 1
 
-fuel = Car(720, 40, fuel_image)
-canister = Car(0, 0, canister_image)
-water = Car(0, 0, water_image)
-all_sprite.add(cars_group, player, fuel)
+all_sprite.add(cars_group, player)
 
 
 def screen1():
     sc = pg.Surface(screen.get_size())
     sc.fill(pg.Color('navy'))
+    sc.blit(start_phone, start_phone_rect)
     sc.blit(button_start, button_start_rect)
     sc.blit(button_stop, button_stop_rect)
     screen.blit(sc, (0, 0))
@@ -201,52 +171,24 @@ while game:
             if e.button == 1:
                 if button_start_rect.collidepoint(e.pos):
                     scr1 = False
-                    level = 40
-                    count[0] = 0
-                elif button_stop_rect.collidepoint(e.pos):
+                if button_stop_rect.collidepoint(e.pos):
                     game = False
-
 
     if pg.sprite.spritecollideany(player, cars_group):
         if not block:
-            player.position.x += 50 * random.randrange(-1, 2, 2)
+            player.position[0] += 50 * random.randrange(-1, 2, 2)
             player.angle = 50 * random.randrange(-1, 2, 2)
             sound_car_accident.play()
             car_accident += 1
             block = True
     else:
         block = False
-
-    if pg.sprite.spritecollide(player, canister_group, True):
-        level = 40
-        sound_canister.play()
-
-    if pg.sprite.spritecollideany(player, water_group):
-        if not block2:
-            player.angle = random.randint(60, 90) * random.randrange(-1, 2, 2)
-            block2 = True
-    else:
-        block2 = False
-
     if scr1:
         screen1()
     else:
-        level -= 0.01
-        if level <= 0 or car_accident > 9:
-            scr1 = True
-        elif level <= 10:
-            rgb[:2] = 250, 0
-        elif level <= 20:
-            rgb[0] = 250
-        else:
-            rgb[:2] = 0, 250
-
         all_sprite.update()
         all_sprite.draw(screen)
-        pg.draw.rect(
-            screen, rgb,
-            (fuel.rect.left + 10, fuel.rect.bottom - level - 8, 21, level))
-        screen.blit(font.render(f'аварий: {car_accident}', 1, GREEN), (45, 10))
+        screen.blit(font.render(f'{car_accident = }', 1, GREEN), (45, 10))
 
     pg.display.update()
     clock.tick(FPS)
