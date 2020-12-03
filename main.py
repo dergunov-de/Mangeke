@@ -42,8 +42,10 @@ fuel_image = pg.image.load('Image/fuel.png')
 canister_image = pg.image.load('Image/canister.png')
 water_image = pg.image.load('Image/water.png')
 
-u1_event = pg.USEREVENT + 1
-pg.time.set_timer(u1_event, random.randrange(6000, 26001, 4000))
+user_event = pg.USEREVENT + 1
+pg.time.set_timer(user_event, random.randrange(7000, 27001, 5000))
+user_event_2 = pg.USEREVENT + 2
+pg.time.set_timer(user_event_2, random.randrange(6000, 26001, 4000))
 
 
 class Player(pg.sprite.Sprite):
@@ -109,7 +111,7 @@ class Car(pg.sprite.Sprite):
         if img == fuel_image:
             self.image = img
             self.speed = 0
-        elif img == canister_image:
+        elif img == canister_image or img == water_image:
             self.image = img
             self.speed = 1
         else:
@@ -120,7 +122,7 @@ class Car(pg.sprite.Sprite):
     def update(self):
         self.rect.y += self.speed
         if self.rect.top >= HEIGHT:
-            if self == canister:
+            if self == canister or self == water:
                 self.kill()
             else:
                 count[0] += 1
@@ -159,10 +161,10 @@ class Road(pg.sprite.Sprite):
             self.rect.bottom = 0
 
 
-all_sprite = pg.sprite.Group()
+all_sprite = pg.sprite.LayeredUpdates()
 cars_group = pg.sprite.Group()
 canister_group = pg.sprite.Group()
-
+water_group = pg.sprite.Group
 for r in range(2):
     all_sprite.add(Road(0, 0 if r == 0 else -HEIGHT))
 player = Player()
@@ -211,6 +213,12 @@ while game:
             canister.rect.center = \
                 random.randrange(80, WIDTH, 80), -canister.rech.h
             pg.time.set_timer(user_event, random.randrange(7000, 27001, 5000))
+        elif e.type == user_event_2:
+            water_group.add(water)
+            allsprite.add(water)
+            canister.rect.center = \
+                random.randrange(80, WIDTH, 80), -water.rech.h
+            pg.time.set_timer(user_event_2, random.randrange(6000, 26001, 4000))
 
     if pg.sprite.spritecollideany(player, cars_group):
         if not block:
@@ -221,7 +229,16 @@ while game:
             block = True
     else:
         block = False
-        
+    if pg.sprite.spritecollideany(player, water_group):
+        if not block2:
+            player.position.y = 0
+            player.angle = 50 * random.randint(60, 90) * random.randrange(-1, 2, 2)
+            sound_car_accident.play()
+            car_accident += 1
+            block2 = True
+    else:
+        block2 = False
+
     if pg.sprite.spritecollide(player, canister_group, True):
         level = 40
         sound_canister.play()
